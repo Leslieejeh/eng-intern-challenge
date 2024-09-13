@@ -70,12 +70,6 @@ char_num_punct={
     'number_follows': '.O.O0O',   # Number follows (dots 3, 4, 5, 6)
 }
 
-braille_to_eng = {v: k for k, v in english_to_braille.items()}
-brl_to_num = {
-    'O.....': '1', 'O.O...': '2', 'OO....': '3', 'OO.O..': '4', 'O..O..': '5',
-    'OOO...': '6', 'OOOO..': '7', 'O.OO..': '8', '.OO...': '9', '.OOO..': '0',
-}
-
 # braille_to_english = {
 #     'O.....': 'a',  # Braille for 'a'
 #     'OO....': 'b',  # Braille for 'b'
@@ -136,46 +130,71 @@ def Translate_to_english(text):
 
 def Braille_to_english(text):
     english_text = ''
-    chunks = [text[i:i+6] for i in range(0, len(text), 6)]
-    is_number = False
+    i = 0
     is_capital = False
+    is_number = False
 
-    for braille in chunks:
-        # Check for number indicator
-        if braille == char_num_punct['number_follows']:
-            is_number = True
-            continue
-
-        # Check for space
-        if braille == '......':
-            english_text += ' '
-            is_number = False
-            is_capital = False
-            continue
+    while i < len(text):
+        current_chunk = text[i:i+6]
 
         # Check for capital indicator
-        if braille == char_num_punct['capital_follows']:
+        if current_chunk == char_num_punct['capital_follows']:
+            print("cap")
             is_capital = True
+            i += 6 
             continue
 
-        # Handle numbers if number flag is set
+        # Check for number indicator
+        elif current_chunk == char_num_punct['number_follows']:
+            print("number follows")
+            is_number = True
+            i += 6
+            continue
+
+        # Handle spaces
+        elif current_chunk == english_to_braille[' ']:
+            english_text += ' '
+            i += 6  # Move past the space
+
+            # Immediately check the next chunk to see if it's a capital or number indicator
+            next_chunk = text[i:i+6]
+            if next_chunk == char_num_punct['capital_follows']:
+                is_capital = True
+                i += 6  # Move past the capital indicator
+                continue
+            elif next_chunk == char_num_punct['number_follows']:
+                is_number = True
+                i += 6  # Move past the number indicator
+                continue
+
+            # If no special indicator follows, reset flags
+            is_capital = False
+            is_number = False
+            continue
+
+        # Translate numbers if number flag is set
         if is_number:
-            if braille in brl_to_num:
-                english_text += brl_to_num[braille]
+            for digit, braille in english_to_braille.items():
+                if braille == current_chunk and digit.isdigit():
+                    english_text += digit
+                    break
+            i += 6
             continue
 
-        # Handle letters and capital letters
-        if braille in braille_to_eng:
-            if is_capital:
-                english_text += braille_to_eng[braille].upper()
-                is_capital = False
-            else:
-                english_text += braille_to_eng[braille]
+        # Translate letters and capital letters
+        for letter, braille in english_to_braille.items():
+            if braille == current_chunk and not letter.isdigit():
+                if is_capital:
+                    english_text += letter.upper()
+                    is_capital = False  # Reset the capital flag after one letter
+                else:
+                    english_text += letter
+                break
 
+        # Move to the next Braille chunk
+        i += 6
 
     print(english_text)
-  
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
