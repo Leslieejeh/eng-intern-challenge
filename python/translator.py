@@ -136,9 +136,9 @@ def Braille_to_english(text):
 
     while i < len(text):
         current_chunk = text[i:i+6]
-
+ 
         # Check for capital indicator 
-        
+
         if current_chunk == char_num_punct['capital_follows']:
             print("cap")
             is_capital = True
